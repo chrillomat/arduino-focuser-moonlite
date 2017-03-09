@@ -10,27 +10,31 @@
 //
 // orly.andico@gmail.com, 13 April 2014
 
+// TODO (wgc):
+// * reset on/off
+// * power monitoring (for battery power) --> voltage divider from Vin!
 
-#include <AccelStepper.h>
-#include <AFMotor.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
+#include "AccelStepper.h"
+long hexstr2long(char *line);
 
 // maximum speed is 160pps which should be OK for most
 // tin can steppers
-#define MAXSPEED 100
-#define SPEEDMULT 3
+#define MAXSPEED 800
+#define ACCELERATION 100
 
-AF_Stepper motor1(300, 1);
+#define ENABLE_PIN 2
+#define MS1_PIN    3
+#define MS2_PIN    4
+#define MS3_PIN    5
+#define RESET_PIN  6
+#define SLEEP_PIN  7
+#define STEP_PIN   8
+#define DIR_PIN    9
 
-void forwardstep() {  
-  motor1.onestep(BACKWARD, DOUBLE);
-}
-
-void backwardstep() {  
-  motor1.onestep(FORWARD, DOUBLE);
-}
-
-AccelStepper stepper(forwardstep, backwardstep);
+AccelStepper stepper(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
 
 #define MAXCOMMAND 8
 
@@ -49,11 +53,24 @@ void setup()
 {  
   Serial.begin(9600);
 
+  pinMode(MS1_PIN,OUTPUT);
+  digitalWrite(MS1_PIN,HIGH);
+  pinMode(MS2_PIN,OUTPUT);
+  digitalWrite(MS2_PIN,HIGH);
+  pinMode(MS3_PIN,OUTPUT);
+  digitalWrite(MS3_PIN,HIGH);
+  pinMode(RESET_PIN,OUTPUT); // TODO: set&release reset?
+  digitalWrite(RESET_PIN,HIGH);
+  pinMode(SLEEP_PIN,OUTPUT);
+  digitalWrite(SLEEP_PIN,HIGH);
+
   // we ignore the Moonlite speed setting because Accelstepper implements
   // ramping, making variable speeds un-necessary
   stepper.setSpeed(MAXSPEED);
   stepper.setMaxSpeed(MAXSPEED);
-  stepper.setAcceleration(10);
+  stepper.setAcceleration(ACCELERATION);
+  stepper.setPinsInverted(false,false,true);
+  stepper.setEnablePin(ENABLE_PIN);
   stepper.enableOutputs();
   memset(line, 0, MAXCOMMAND);
   millisLastMove = millis();
@@ -75,7 +92,6 @@ void loop(){
       // after movement has stopped
       if ((millis() - millisLastMove) > 15000) {
         stepper.disableOutputs();
-        motor1.release();
       }
     }
 
