@@ -166,7 +166,7 @@ void loop(){
 
     // get the current temperature, hard-coded
     if (!strcasecmp(cmd, "GT")) {
-      Serial.print("20#");
+      Serial.print("0020#");
     }
 
     // get the temperature coefficient, hard-coded
