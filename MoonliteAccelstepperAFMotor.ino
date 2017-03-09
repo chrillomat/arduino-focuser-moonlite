@@ -89,6 +89,11 @@ void loop(){
     // read the command until the terminating # character
     while (Serial.available() && !eoc) {
       inChar = Serial.read();
+      // this adds an ACK similar to lx200, response = "F"
+      if (inChar == 0x06) {
+        Serial.print("F");
+	continue;
+      } 
       if (inChar != '#' && inChar != ':') {
         line[idx++] = inChar;
         if (idx >= MAXCOMMAND) {
